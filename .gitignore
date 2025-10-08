@@ -6,3 +6,8 @@
 # OS files
 .DS_Store
 .vscode/
+
+# Environment files
+server/streaming-server/.env
+.env
+*.env

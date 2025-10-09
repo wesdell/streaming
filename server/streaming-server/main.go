@@ -11,6 +11,10 @@ import (
 func main() {
 	router := gin.Default()
 
+	// User routes
+	router.POST("/register", controllers.Register())
+
+	// Movie routes
 	router.GET("/movies", controllers.GetAllMovies())
 	router.GET("/movies/:imdb_id", controllers.GetMovieById())
 	router.POST("/movies", controllers.CreateMovie())

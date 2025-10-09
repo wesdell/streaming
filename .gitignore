@@ -6,6 +6,7 @@
 # OS files
 .DS_Store
 .vscode/
+.idea/
 
 # Environment files
 server/streaming-server/.env

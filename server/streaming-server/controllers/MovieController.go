@@ -34,3 +34,25 @@ func GetAllMovies() gin.HandlerFunc {
 		c.JSON(http.StatusOK, movies)
 	}
 }
+
+func GetMovieById() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		ctx, cancel := context.WithTimeout(c, 100*time.Second)
+		defer cancel()
+
+		movieImdbId := c.Param("imdb_id")
+		if movieImdbId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Movie IMDB id is required"})
+			return
+		}
+
+		var movie models.Movie
+		err := movieCollection.FindOne(ctx, bson.M{"imdb_id": movieImdbId}).Decode(&movie)
+		if err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+			return
+		}
+
+		c.JSON(http.StatusOK, movie)
+	}
+}

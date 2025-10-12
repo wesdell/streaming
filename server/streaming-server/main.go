@@ -13,6 +13,7 @@ func main() {
 
 	// User routes
 	router.POST("/register", controllers.Register())
+	router.POST("/login", controllers.Login())
 
 	// Movie routes
 	router.GET("/movies", controllers.GetAllMovies())

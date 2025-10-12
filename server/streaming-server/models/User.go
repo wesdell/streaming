@@ -20,3 +20,17 @@ type User struct {
 	CreatedAt      time.Time     `bson:"created_at" json:"created_at"`
 	UpdatedAt      time.Time     `bson:"updated_at" json:"updated_at"`
 }
+
+type UserLogin struct {
+	Email    string `json:"email" validate:"required,email"`
+	Password string `json:"password" validate:"required,min=8,max=20"`
+}
+
+type UserResponse struct {
+	UserId         string  `json:"user_id"`
+	FirstName      string  `json:"first_name"`
+	LastName       string  `json:"last_name"`
+	Email          string  `json:"email"`
+	Role           string  `json:"role"`
+	FavoriteGenres []Genre `json:"favorite_genres"`
+}

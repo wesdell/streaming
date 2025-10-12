@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/wesdell/streaming/server/streaming-server/config"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 
@@ -20,10 +21,8 @@ type Token struct {
 	jwt.RegisteredClaims
 }
 
-var secretKey string = GetEnvVariable("JWT_SECRET_KEY")
-var refreshKey string = GetEnvVariable("JWT_SECRET_REFRESH_KEY")
-
-var userCollection *mongo.Collection = database.OpenCollection("users")
+var secretKey string = config.GetEnvVariable("JWT_SECRET_KEY")
+var refreshKey string = config.GetEnvVariable("JWT_SECRET_REFRESH_KEY")
 
 func GenerateTokens(email, firstName, lastName, role, userId string) (string, string, error) {
 	claims := &Token{
@@ -80,6 +79,7 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 		},
 	}
 
+	var userCollection *mongo.Collection = database.OpenCollection("users")
 	_, err = userCollection.UpdateOne(ctx, bson.M{"user_id": userId}, update)
 	if err != nil {
 		return err

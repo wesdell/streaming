@@ -3,16 +3,15 @@ package database
 import (
 	"log"
 
+	"github.com/wesdell/streaming/server/streaming-server/config"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
-
-	"github.com/wesdell/streaming/server/streaming-server/utils"
 )
 
 var client *mongo.Client = Connect()
 
 func Connect() *mongo.Client {
-	mongodb := utils.GetEnvVariable("MONGODB_URI")
+	mongodb := config.GetEnvVariable("MONGODB_URI")
 	if mongodb == "" {
 		log.Fatal("Database connection string not set!")
 	}
@@ -26,7 +25,7 @@ func Connect() *mongo.Client {
 }
 
 func OpenCollection(collectionName string) *mongo.Collection {
-	dbName := utils.GetEnvVariable("DB_NAME")
+	dbName := config.GetEnvVariable("DB_NAME")
 	collection := client.Database(dbName).Collection(collectionName)
 	if collection == nil {
 		return nil

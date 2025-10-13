@@ -2,8 +2,10 @@ package utils
 
 import (
 	"context"
+	"errors"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/wesdell/streaming/server/streaming-server/config"
 	"go.mongodb.org/mongo-driver/v2/bson"
@@ -85,4 +87,18 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 		return err
 	}
 	return nil
+}
+
+func GetToken(c *gin.Context) (string, error) {
+	authHeader := c.Request.Header.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("No Authorization header found")
+	}
+
+	tokenString := authHeader[len("Bearer "):]
+	if tokenString == "" {
+		return "", errors.New("No token found")
+	}
+
+	return tokenString, nil
 }

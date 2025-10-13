@@ -5,20 +5,14 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-	"github.com/wesdell/streaming/server/streaming-server/controllers"
+	"github.com/wesdell/streaming/server/streaming-server/routes"
 )
 
 func main() {
 	router := gin.Default()
 
-	// User routes
-	router.POST("/register", controllers.Register())
-	router.POST("/login", controllers.Login())
-
-	// Movie routes
-	router.GET("/movies", controllers.GetAllMovies())
-	router.GET("/movies/:imdb_id", controllers.GetMovieById())
-	router.POST("/movies", controllers.CreateMovie())
+	routes.SetUpUnprotectedRoutes(router)
+	routes.SetUpProtectedRoutes(router)
 
 	if err := router.Run(":8080"); err != nil {
 		fmt.Println("Failed to start server!", err)

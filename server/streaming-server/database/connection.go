@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-var client *mongo.Client = Connect()
+var client = Connect()
 
 func Connect() *mongo.Client {
 	mongodb := config.GetEnvVariable("MONGODB_URI")

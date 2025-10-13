@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 	"golang.org/x/crypto/bcrypt"
 
 	"github.com/wesdell/streaming/server/streaming-server/database"
@@ -16,7 +15,7 @@ import (
 	"github.com/wesdell/streaming/server/streaming-server/utils"
 )
 
-var userCollection *mongo.Collection = database.OpenCollection("users")
+var userCollection = database.OpenCollection("users")
 
 func Register() gin.HandlerFunc {
 	return func(c *gin.Context) {

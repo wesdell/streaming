@@ -8,10 +8,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/wesdell/streaming/server/streaming-server/config"
-	"go.mongodb.org/mongo-driver/v2/bson"
-	"go.mongodb.org/mongo-driver/v2/mongo"
-
 	"github.com/wesdell/streaming/server/streaming-server/database"
+	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type Token struct {
@@ -23,8 +21,8 @@ type Token struct {
 	jwt.RegisteredClaims
 }
 
-var secretKey string = config.GetEnvVariable("JWT_SECRET_KEY")
-var refreshKey string = config.GetEnvVariable("JWT_SECRET_REFRESH_KEY")
+var secretKey = config.GetEnvVariable("JWT_SECRET_KEY")
+var refreshKey = config.GetEnvVariable("JWT_SECRET_REFRESH_KEY")
 
 func GenerateTokens(email, firstName, lastName, role, userId string) (string, string, error) {
 	claims := &Token{
@@ -81,7 +79,7 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 		},
 	}
 
-	var userCollection *mongo.Collection = database.OpenCollection("users")
+	userCollection := database.OpenCollection("users")
 	_, err = userCollection.UpdateOne(ctx, bson.M{"user_id": userId}, update)
 	if err != nil {
 		return err
@@ -92,13 +90,30 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 func GetToken(c *gin.Context) (string, error) {
 	authHeader := c.Request.Header.Get("Authorization")
 	if authHeader == "" {
-		return "", errors.New("No Authorization header found")
+		return "", errors.New("no Authorization header found")
 	}
 
 	tokenString := authHeader[len("Bearer "):]
 	if tokenString == "" {
-		return "", errors.New("No token found")
+		return "", errors.New("no token found")
 	}
 
 	return tokenString, nil
+}
+
+func ValidateToken(tokenString string) (*Token, error) {
+	claims := &Token{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(secretKey), nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, err
+	}
+	if claims.ExpiresAt.Time.Before(time.Now()) {
+		return nil, errors.New("token expired")
+	}
+	return claims, nil
 }

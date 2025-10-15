@@ -32,14 +32,14 @@ func GetUserFavoriteGenres(userId string) ([]string, error) {
 	defer cancel()
 
 	var userCollection = database.OpenCollection("users")
-	var result bson.M
 
-	filter := bson.M{"user_id": userId}
+	filter := bson.D{{Key: "user_id", Value: userId}}
 	projection := bson.M{
 		"favorite_genres.genre_name": 1,
 		"_id":                        0,
 	}
 	opt := options.FindOne().SetProjection(projection)
+	var result bson.M
 
 	err := userCollection.FindOne(ctx, filter, opt).Decode(&result)
 	if err != nil {

@@ -4,19 +4,15 @@ import (
 	"context"
 	"errors"
 	"strings"
-	"time"
 
 	"github.com/tmc/langchaingo/llms/openai"
+
 	"github.com/wesdell/streaming/server/streaming-server/config"
-	"github.com/wesdell/streaming/server/streaming-server/database"
-	"github.com/wesdell/streaming/server/streaming-server/models"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"github.com/wesdell/streaming/server/streaming-server/utils"
 )
 
-var rankingCollection = database.OpenCollection("rankings")
-
 func GetReviewRanking(adminReview string) (string, int, error) {
-	rankings, err := GetRankings()
+	rankings, err := utils.GetRankings()
 	if err != nil {
 		return "", 0, err
 	}
@@ -56,23 +52,4 @@ func GetReviewRanking(adminReview string) (string, int, error) {
 	}
 
 	return response, rankingValue, nil
-}
-
-func GetRankings() ([]models.Ranking, error) {
-	var rankings []models.Ranking
-
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
-	defer cancel()
-
-	cursor, err := rankingCollection.Find(ctx, bson.M{})
-	if err != nil {
-		return nil, err
-	}
-	defer cursor.Close(ctx)
-
-	if err := cursor.All(ctx, &rankings); err != nil {
-		return nil, err
-	}
-
-	return rankings, nil
 }

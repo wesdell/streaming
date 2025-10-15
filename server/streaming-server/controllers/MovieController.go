@@ -7,9 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
+	"go.mongodb.org/mongo-driver/v2/bson"
+
 	"github.com/wesdell/streaming/server/streaming-server/database"
 	"github.com/wesdell/streaming/server/streaming-server/models"
-	"go.mongodb.org/mongo-driver/v2/bson"
+	"github.com/wesdell/streaming/server/streaming-server/openai"
 )
 
 var movieCollection = database.OpenCollection("movies")
@@ -81,5 +83,63 @@ func CreateMovie() gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusCreated, result)
+	}
+}
+
+func CreateReview() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		movieId := c.Param("imdb_id")
+		if movieId == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Movie IMDB id is required"})
+			return
+		}
+
+		var req struct {
+			AdminReview string `json:"admin_review"`
+		}
+
+		var res struct {
+			RankingName string `json:"ranking_name"`
+			AdminReview string `json:"admin_review"`
+		}
+
+		if err := c.ShouldBind(&req); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+
+		sentiment, rankingValue, err := openai.GetReviewRanking(req.AdminReview)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get review ranking"})
+			return
+		}
+
+		filter := bson.M{"imdb_id": movieId}
+		update := bson.M{
+			"$set": bson.M{
+				"admin_review": req.AdminReview,
+				"ranking": bson.M{
+					"ranking_name":  sentiment,
+					"ranking_value": rankingValue,
+				},
+			},
+		}
+
+		ctx, cancel := context.WithTimeout(c, 100*time.Second)
+		defer cancel()
+
+		result, err := movieCollection.UpdateOne(ctx, filter, update)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed updating movie"})
+			return
+		}
+		if result.MatchedCount == 0 {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
+			return
+		}
+
+		res.RankingName = sentiment
+		res.AdminReview = req.AdminReview
+		c.JSON(http.StatusOK, res)
 	}
 }

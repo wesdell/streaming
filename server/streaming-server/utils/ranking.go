@@ -4,20 +4,23 @@ import (
 	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/wesdell/streaming/server/streaming-server/database"
 	"github.com/wesdell/streaming/server/streaming-server/models"
 )
 
-func GetRankings() ([]models.Ranking, error) {
+func GetRankings(client *mongo.Client, c *gin.Context) ([]models.Ranking, error) {
 	var rankings []models.Ranking
-	var rankingCollection = database.OpenCollection("rankings")
 
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+	ctx, cancel := context.WithTimeout(c, 100*time.Second)
 	defer cancel()
 
-	cursor, err := rankingCollection.Find(ctx, bson.M{})
+	var rankingCollection = database.OpenCollection("rankings", client)
+
+	cursor, err := rankingCollection.Find(ctx, bson.D{})
 	if err != nil {
 		return nil, err
 	}

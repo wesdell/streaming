@@ -5,14 +5,16 @@ import (
 	"errors"
 	"strings"
 
+	"github.com/gin-gonic/gin"
 	"github.com/tmc/langchaingo/llms/openai"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 
 	"github.com/wesdell/streaming/server/streaming-server/config"
 	"github.com/wesdell/streaming/server/streaming-server/utils"
 )
 
-func GetReviewRanking(adminReview string) (string, int, error) {
-	rankings, err := utils.GetRankings()
+func GetReviewRanking(adminReview string, client *mongo.Client, c *gin.Context) (string, int, error) {
+	rankings, err := utils.GetRankings(client, c)
 	if err != nil {
 		return "", 0, err
 	}

@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 
 	"github.com/wesdell/streaming/server/streaming-server/config"
@@ -18,14 +19,14 @@ import (
 	"github.com/wesdell/streaming/server/streaming-server/utils"
 )
 
-var movieCollection = database.OpenCollection("movies")
-
 var validate = validator.New()
 
-func GetAllMovies() gin.HandlerFunc {
+func GetAllMovies(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c, 100*time.Second)
 		defer cancel()
+
+		var movieCollection = database.OpenCollection("movies", client)
 
 		var movies []models.Movie
 		cursor, err := movieCollection.Find(ctx, bson.M{})
@@ -42,7 +43,7 @@ func GetAllMovies() gin.HandlerFunc {
 	}
 }
 
-func GetMovieById() gin.HandlerFunc {
+func GetMovieById(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c, 100*time.Second)
 		defer cancel()
@@ -53,8 +54,9 @@ func GetMovieById() gin.HandlerFunc {
 			return
 		}
 
+		var movieCollection = database.OpenCollection("movies", client)
 		var movie models.Movie
-		err := movieCollection.FindOne(ctx, bson.M{"imdb_id": movieImdbId}).Decode(&movie)
+		err := movieCollection.FindOne(ctx, bson.D{{Key: "imdb_id", Value: movieImdbId}}).Decode(&movie)
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Movie not found"})
 			return
@@ -64,7 +66,7 @@ func GetMovieById() gin.HandlerFunc {
 	}
 }
 
-func CreateMovie() gin.HandlerFunc {
+func CreateMovie(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		ctx, cancel := context.WithTimeout(c, 100*time.Second)
 		defer cancel()
@@ -80,6 +82,7 @@ func CreateMovie() gin.HandlerFunc {
 			return
 		}
 
+		var movieCollection = database.OpenCollection("movies", client)
 		result, err := movieCollection.InsertOne(ctx, movie)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create movie"})
@@ -90,7 +93,7 @@ func CreateMovie() gin.HandlerFunc {
 	}
 }
 
-func CreateReview() gin.HandlerFunc {
+func CreateReview(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, err := utils.GetRoleFromContext(c)
 		if err != nil {
@@ -122,13 +125,13 @@ func CreateReview() gin.HandlerFunc {
 			return
 		}
 
-		sentiment, rankingValue, err := openai.GetReviewRanking(req.AdminReview)
+		sentiment, rankingValue, err := openai.GetReviewRanking(req.AdminReview, client, c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not get review ranking"})
 			return
 		}
 
-		filter := bson.M{"imdb_id": movieId}
+		filter := bson.D{{Key: "imdb_id", Value: movieId}}
 		update := bson.M{
 			"$set": bson.M{
 				"admin_review": req.AdminReview,
@@ -142,6 +145,7 @@ func CreateReview() gin.HandlerFunc {
 		ctx, cancel := context.WithTimeout(c, 100*time.Second)
 		defer cancel()
 
+		var movieCollection = database.OpenCollection("movies", client)
 		result, err := movieCollection.UpdateOne(ctx, filter, update)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed updating movie"})
@@ -158,7 +162,7 @@ func CreateReview() gin.HandlerFunc {
 	}
 }
 
-func GetRecommendedMovies() gin.HandlerFunc {
+func GetRecommendedMovies(client *mongo.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userId, err := utils.GetUserIdFromContext(c)
 		if err != nil {
@@ -166,7 +170,7 @@ func GetRecommendedMovies() gin.HandlerFunc {
 			return
 		}
 
-		favoriteGenres, err := utils.GetUserFavoriteGenres(userId)
+		favoriteGenres, err := utils.GetUserFavoriteGenres(userId, client, c)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
@@ -182,11 +186,16 @@ func GetRecommendedMovies() gin.HandlerFunc {
 		findOptions.SetSort(bson.D{{Key: "ranking.value", Value: 1}})
 		findOptions.SetLimit(recommendedMoviesLimit)
 
-		filter := bson.M{"genre.genre_name": bson.M{"$in": favoriteGenres}}
+		filter := bson.D{{
+			Key: "genre.genre_name", Value: bson.D{{
+				Key: "$in", Value: favoriteGenres,
+			}},
+		}}
 
 		ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
 		defer cancel()
 
+		var movieCollection = database.OpenCollection("movies", client)
 		cursor, err := movieCollection.Find(ctx, filter, findOptions)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error fetching recommended movies"})

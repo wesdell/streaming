@@ -68,3 +68,17 @@ func GetUserFavoriteGenres(userId string) ([]string, error) {
 
 	return genresName, nil
 }
+
+func GetRoleFromContext(c *gin.Context) (string, error) {
+	role, exists := c.Get("role")
+	if !exists {
+		return "", errors.New("role does not exist")
+	}
+
+	memberRole, ok := role.(string)
+	if !ok {
+		return "", errors.New("unable to retrieve user memberRole")
+	}
+
+	return memberRole, nil
+}

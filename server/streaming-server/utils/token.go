@@ -7,9 +7,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"go.mongodb.org/mongo-driver/v2/bson"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+
 	"github.com/wesdell/streaming/server/streaming-server/config"
 	"github.com/wesdell/streaming/server/streaming-server/database"
-	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 type Token struct {
@@ -34,7 +36,7 @@ func GenerateTokens(email, firstName, lastName, role, userId string) (string, st
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    "Streaming",
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 		},
 	}
 
@@ -66,7 +68,7 @@ func GenerateTokens(email, firstName, lastName, role, userId string) (string, st
 	return signedToken, signedRefreshToken, nil
 }
 
-func UpdateTokens(userId, token, refreshToken string) (err error) {
+func UpdateTokens(userId, token, refreshToken string, client *mongo.Client) (err error) {
 	var ctx, cancel = context.WithTimeout(context.Background(), 100*time.Second)
 	defer cancel()
 
@@ -79,7 +81,7 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 		},
 	}
 
-	userCollection := database.OpenCollection("users")
+	userCollection := database.OpenCollection("users", client)
 	_, err = userCollection.UpdateOne(ctx, bson.M{"user_id": userId}, update)
 	if err != nil {
 		return err
@@ -88,14 +90,19 @@ func UpdateTokens(userId, token, refreshToken string) (err error) {
 }
 
 func GetToken(c *gin.Context) (string, error) {
-	authHeader := c.Request.Header.Get("Authorization")
-	if authHeader == "" {
-		return "", errors.New("no Authorization header found")
-	}
+	//authHeader := c.Request.Header.Get("Authorization")
+	//if authHeader == "" {
+	//	return "", errors.New("no Authorization header found")
+	//}
+	//
+	//tokenString := authHeader[len("Bearer "):]
+	//if tokenString == "" {
+	//	return "", errors.New("no token found")
+	//}
 
-	tokenString := authHeader[len("Bearer "):]
-	if tokenString == "" {
-		return "", errors.New("no token found")
+	tokenString, err := c.Cookie("access_token")
+	if err != nil {
+		return "", err
 	}
 
 	return tokenString, nil
@@ -115,5 +122,27 @@ func ValidateToken(tokenString string) (*Token, error) {
 	if claims.ExpiresAt.Time.Before(time.Now()) {
 		return nil, errors.New("token expired")
 	}
+	return claims, nil
+}
+
+func ValidateRefreshToken(tokenString string) (*Token, error) {
+	claims := &Token{}
+	token, err := jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
+
+		return []byte(refreshKey), nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+		return nil, err
+	}
+
+	if claims.ExpiresAt.Time.Before(time.Now()) {
+		return nil, errors.New("refresh token has expired")
+	}
+
 	return claims, nil
 }

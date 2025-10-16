@@ -8,8 +8,6 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
 
-var client = Connect()
-
 func Connect() *mongo.Client {
 	mongodb := config.GetEnvVariable("MONGODB_URI")
 	if mongodb == "" {
@@ -24,7 +22,7 @@ func Connect() *mongo.Client {
 	return client
 }
 
-func OpenCollection(collectionName string) *mongo.Collection {
+func OpenCollection(collectionName string, client *mongo.Client) *mongo.Collection {
 	dbName := config.GetEnvVariable("DB_NAME")
 	collection := client.Database(dbName).Collection(collectionName)
 	if collection == nil {

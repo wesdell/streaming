@@ -27,11 +27,9 @@ func GetUserIdFromContext(c *gin.Context) (string, error) {
 	return id, nil
 }
 
-func GetUserFavoriteGenres(userId string) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Second)
+func GetUserFavoriteGenres(userId string, client *mongo.Client, c *gin.Context) ([]string, error) {
+	ctx, cancel := context.WithTimeout(c, 100*time.Second)
 	defer cancel()
-
-	var userCollection = database.OpenCollection("users")
 
 	filter := bson.D{{Key: "user_id", Value: userId}}
 	projection := bson.M{
@@ -39,8 +37,10 @@ func GetUserFavoriteGenres(userId string) ([]string, error) {
 		"_id":                        0,
 	}
 	opt := options.FindOne().SetProjection(projection)
+
 	var result bson.M
 
+	var userCollection = database.OpenCollection("users", client)
 	err := userCollection.FindOne(ctx, filter, opt).Decode(&result)
 	if err != nil {
 		if errors.Is(err, mongo.ErrNoDocuments) {

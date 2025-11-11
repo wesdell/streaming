@@ -1,0 +1,40 @@
+<a 
+  [routerLink]="['/stream', movie.youtube_id]"
+  class="block"
+>
+  <div class="bg-white shadow-md rounded-lg overflow-hidden hover:shadow-lg transition">
+
+    <div class="relative">
+      <img 
+        [src]="movie.poster_path" 
+        [alt]="movie.title"
+        class="w-full h-64 object-contain bg-gray-100"
+      />
+
+      <span class="absolute inset-0 flex items-center justify-center text-white text-6xl opacity-0 hover:opacity-100 bg-black/40 transition">
+        <i class="fa-solid fa-circle-play"></i>
+      </span>
+    </div>
+
+    <div class="p-4 flex flex-col">
+      <h5 class="text-xl font-semibold">{{ movie.title }}</h5>
+      <p class="text-gray-600">{{ movie.imdb_id }}</p>
+    </div>
+
+    @if (movie.ranking?.ranking_name) {
+      <div class="px-3 py-1 bg-gray-900 text-white rounded-full text-sm mx-4 mb-3 inline-block">
+        {{ movie.ranking.ranking_name }}
+      </div>
+    }
+
+    @if (updateMovieReview) {
+      <button
+        (click)="emitReview(); $event.preventDefault();"
+        class="mx-4 mb-4 px-4 py-2 border border-blue-400 text-blue-400 rounded hover:bg-blue-400 hover:text-white transition"
+      >
+        Review
+      </button>
+    }
+
+  </div>
+</a>

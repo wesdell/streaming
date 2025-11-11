@@ -2,6 +2,8 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 
+import { IMovie } from '../../interfaces/movie';
+
 @Component({
   selector: 'movie',
   standalone: true,
@@ -10,7 +12,7 @@ import { CommonModule } from '@angular/common';
 })
 
 export class Movie {
-  @Input() movie: any;
+  @Input() movie!: IMovie;
   @Output() updateMovieReview = new EventEmitter<string>();
 
   emitReview() {

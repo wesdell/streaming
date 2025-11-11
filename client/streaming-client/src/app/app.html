@@ -1,6 +1,9 @@
 <div class="p-6">
-  <movie
-    [movie]="movie"
-    (updateMovieReview)="handleReview($event)"
-  ></movie>
+
+  <movies
+  [movies]="movies"
+  [message]="message"
+  (updateMovieReview)="handleReview($event)"
+  />
+
 </div>

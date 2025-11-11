@@ -1,0 +1,18 @@
+<div class="container mt-4">
+  <div class="row">
+    
+    @if (movies.length > 0) {
+
+      @for (movie of movies; track movie.imdb_id) {
+        <movie
+          [movie]="movie"
+          (updateMovieReview)="emitUpdate($event)"
+        />
+      }
+
+    } @else {
+      <h2 class="text-xl text-gray-700">{{ message }}</h2>
+    }
+
+  </div>
+</div>

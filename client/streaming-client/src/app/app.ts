@@ -1,12 +1,26 @@
-import { Component, signal } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { Component } from '@angular/core';
+import { Movie } from './components/movie/movie';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  standalone: true,
   templateUrl: './app.html',
-  styleUrl: './app.css'
+  imports: [Movie]
 })
+
 export class App {
-  protected readonly title = signal('streaming-client');
+  movie = {
+    _id: '1',
+    title: 'Interestelar',
+    imdb_id: 'tt0816692',
+    youtube_id: 'zSWdZVtXT7E',
+    poster_path: 'https://image.tmdb.org/t/p/w500/nBNZadXqJSdt05SHLqgT0HuC5Gm.jpg',
+    ranking: {
+      ranking_name: 'Top Rated'
+    }
+  };
+
+  handleReview(imdb: string) {
+    console.log('Reviewing movie:', imdb);
+  }
 }

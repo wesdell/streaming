@@ -1,0 +1,9 @@
+@if (loading()) {
+  <loader />
+} @else {
+  <movies
+    [movies]="movies()"
+    [message]="message()"
+    [updateMovieReview]="updateMovieReview"
+  />
+}

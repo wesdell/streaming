@@ -13,9 +13,9 @@ import { IMovie } from '../../interfaces/movie';
 
 export class Movie {
   @Input() movie!: IMovie;
-  @Output() updateMovieReview = new EventEmitter<string>();
+  @Input() updateMovieReview!: (id: string) => void;
 
   emitReview() {
-    this.updateMovieReview.emit(this.movie.imdb_id);
+    this.updateMovieReview(this.movie.imdb_id);
   }
 }

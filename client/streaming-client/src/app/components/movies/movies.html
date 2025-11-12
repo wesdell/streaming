@@ -6,7 +6,7 @@
       @for (movie of movies; track movie.imdb_id) {
         <movie
           [movie]="movie"
-          (updateMovieReview)="emitUpdate($event)"
+          [updateMovieReview]="updateMovieReview"
         />
       }
 

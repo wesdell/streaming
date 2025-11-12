@@ -10,13 +10,9 @@ import { IMovie } from '../../interfaces/movie';
   imports: [CommonModule, Movie],
   templateUrl: './movies.html',
 })
+
 export class Movies {
   @Input() movies: IMovie[] = [];
   @Input() message: string = '';
-
-  @Output() updateMovieReview = new EventEmitter<string>();
-
-  emitUpdate(movieId: string) {
-    this.updateMovieReview.emit(movieId);
-  }
+  @Input() updateMovieReview!: (id: string) => void;
 }
